@@ -4,6 +4,7 @@ from typing import List
 
 import colorama
 from colorama import Fore, Style
+from tabulate import tabulate
 
 colorama.init(autoreset=True)
 
@@ -32,21 +33,55 @@ class TestReport:
 
     def display(self):
         summary_header = "----- Test Summary -----"
-        print(f"\n{summary_header}")
+        print(f"{summary_header}")
         print(
             f"{Fore.WHITE}Feature:{Style.RESET_ALL} {Fore.WHITE}{self.feature}{Style.RESET_ALL}"
         )
         print(f"{Fore.WHITE}Scenario:{Style.RESET_ALL} {self.scenario}")
-        print(f"Ran {Fore.CYAN}{len(self.steps)}{Style.RESET_ALL} steps")
-        print(
-            f"{Fore.GREEN}{self.summary.features_passed} feature(s) passed,{Style.RESET_ALL} {Fore.RED}{self.summary.features_failed} failed,{Style.RESET_ALL} {Fore.YELLOW}{self.summary.features_skipped} skipped{Style.RESET_ALL}"
-        )
-        print(
-            f"{Fore.GREEN}{self.summary.scenarios_passed} scenario(s) passed,{Style.RESET_ALL} {Fore.RED}{self.summary.scenarios_failed} failed,{Style.RESET_ALL} {Fore.YELLOW}{self.summary.scenarios_skipped} skipped{Style.RESET_ALL}"
-        )
-        print(
-            f"{Fore.GREEN}{self.summary.steps_passed} step(s) passed,{Style.RESET_ALL} {Fore.RED}{self.summary.steps_failed} failed,{Style.RESET_ALL} {Fore.YELLOW}{self.summary.steps_skipped} skipped,{Style.RESET_ALL} {Fore.LIGHTRED_EX}{self.summary.steps_undefined} undefined{Style.RESET_ALL}"
-        )
+        print(f"Ran {Fore.CYAN}{len(self.steps)}{Style.RESET_ALL} steps\n")
+        status_report = {
+            "Features": (
+                self.summary.features_passed,
+                self.summary.features_failed,
+                self.summary.features_skipped,
+            ),
+            "Scenarios": (
+                self.summary.scenarios_passed,
+                self.summary.scenarios_failed,
+                self.summary.scenarios_skipped,
+            ),
+            "Steps": (
+                self.summary.steps_passed,
+                self.summary.steps_failed,
+                self.summary.steps_skipped,
+            ),
+        }
+        table = []
+        for section, data in status_report.items():
+            passed, failed, skipped = data
+            row = [
+                section,
+                f"{Fore.GREEN}{passed}{Style.RESET_ALL} passed",
+                f"{Fore.RED}{failed} failed{Style.RESET_ALL}",
+                f"{Fore.YELLOW}{skipped} skipped{Style.RESET_ALL}",
+            ]
+            table.append(row)
+
+        print(tabulate(table))
+        print()
+        total_failed = [
+            self.summary.features_failed,
+            self.summary.scenarios_failed,
+            self.summary.steps_failed,
+        ]
+        if sum(total_failed) > 0:
+            print(
+                f"Found {Fore.LIGHTRED_EX}{self.summary.steps_undefined}{Style.RESET_ALL} failed steps"
+            )
+        if self.summary.steps_undefined > 0:
+            print(
+                f"Found {Fore.LIGHTRED_EX}{self.summary.steps_undefined}{Style.RESET_ALL} steps undefined"
+            )
         print(f"Time elapsed: {self.summary.time_taken}")
         print("-" * len(summary_header))
 
