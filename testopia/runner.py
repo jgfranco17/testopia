@@ -6,9 +6,9 @@ from typing import Any, List, Optional, Type
 
 from behave.configuration import Configuration
 from behave.runner import Runner
-from behave.tag_expression import TagExpression
 
 from .errors import TestopiaInputError, TestopiaRuntimeError
+from .parser import ReportParser
 
 
 class TestRunner:
@@ -32,17 +32,18 @@ class TestRunner:
         self.step_definitions_dir = step_definitions_dir
         self.export = export
         self.results_dir = results_dir
+        self.results_file = os.path.join(self.results_dir, "report.txt")
         self._old_stdout: Optional[StringIO] = None
         self._my_stdout: Optional[StringIO] = None
         self.results: str = ""
         self.logger = self.__setup_logger(log_level)
+        self.output = ""
 
         # Ensure results directory exists
         if export:
             if not os.path.exists(self.results_dir):
                 os.makedirs(self.results_dir)
                 self.logger.info(f"Created results directory: {self.results_dir}")
-                results_file = os.path.join(self.results_dir, "results.txt")
 
     def __setup_logger(self, level: int) -> logging.Logger:
         """
@@ -91,11 +92,9 @@ class TestRunner:
 
         # Optionally save results to file
         if self.export:
-            results_file = os.path.join(self.results_dir, "results.txt")
-            print(len(self.results))
-            with open(results_file, "w") as file:
+            with open(self.results_file, "w") as file:
                 file.write(self.results)
-            self.logger.info(f"Results written to {results_file}")
+            self.logger.info(f"Results written to {self.results_file}")
 
         if exc_type:
             self.logger.error(
@@ -165,11 +164,12 @@ class TestRunner:
         sys.stdout = self._old_stdout
         return self._my_stdout.getvalue()
 
-    def get_results(self) -> str:
+    def display_results(self) -> str:
         """
         Retrieve the results of the last test run.
 
         :return: Contents of the results as a string.
         """
         self.logger.info("Retrieving test results")
-        return self.results if hasattr(self, "results") else ""
+        report = ReportParser(self.results).parse()
+        report.display()

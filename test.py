@@ -11,8 +11,7 @@ def main():
     with runner:
         results = runner.run(format="pretty", tags=["@smoke"])
 
-    print("Gathered results from runner:")
-    print(results)
+    runner.display_results()
 
 
 if __name__ == "__main__":
