@@ -6,6 +6,9 @@ from typing import Any, List, Optional, Type
 
 from behave.configuration import Configuration
 from behave.runner import Runner
+from behave.tag_expression import TagExpression
+
+from .errors import TestopiaInputError, TestopiaRuntimeError
 
 
 class TestRunner:
@@ -30,7 +33,7 @@ class TestRunner:
         self.export = export
         self.results_dir = results_dir
         self._old_stdout: Optional[StringIO] = None
-        self._mystdout: Optional[StringIO] = None
+        self._my_stdout: Optional[StringIO] = None
         self.results: str = ""
         self.logger = self.__setup_logger(log_level)
 
@@ -39,6 +42,7 @@ class TestRunner:
             if not os.path.exists(self.results_dir):
                 os.makedirs(self.results_dir)
                 self.logger.info(f"Created results directory: {self.results_dir}")
+                results_file = os.path.join(self.results_dir, "results.txt")
 
     def __setup_logger(self, level: int) -> logging.Logger:
         """
@@ -51,7 +55,7 @@ class TestRunner:
         logger.setLevel(level)
         handler = logging.StreamHandler()
         handler.setLevel(level)
-        log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        log_format = "[%(asctime)s][%(levelname)s] %(message)s"
         formatter = logging.Formatter(log_format)
         handler.setFormatter(formatter)
         logger.addHandler(handler)
@@ -63,9 +67,9 @@ class TestRunner:
         :return: self
         """
         # Redirect stdout to capture Behave output
-        self.logger.info("Entering TestRunner context")
+        self.logger.debug("TestRunner context started")
         self._old_stdout = sys.stdout
-        sys.stdout = self._mystdout = StringIO()
+        sys.stdout = self._my_stdout = StringIO()
         return self
 
     def __exit__(
@@ -82,23 +86,47 @@ class TestRunner:
         :return: True if exception is handled, None otherwise
         """
         sys.stdout = self._old_stdout
-        if self._mystdout:
-            self.results = self._mystdout.getvalue()
+        if self._my_stdout:
+            self.results = self._my_stdout.getvalue()
 
         # Optionally save results to file
-        results_file = os.path.join(self.results_dir, "results.txt")
-        with open(results_file, "w") as file:
-            file.write(self.results)
-        self.logger.info(f"Results written to {results_file}")
+        if self.export:
+            results_file = os.path.join(self.results_dir, "results.txt")
+            print(len(self.results))
+            with open(results_file, "w") as file:
+                file.write(self.results)
+            self.logger.info(f"Results written to {results_file}")
 
         if exc_type:
             self.logger.error(
                 "Exception occurred", exc_info=(exc_type, exc_val, exc_tb)
             )
 
-        self.logger.info("Exiting TestRunner context")
+        self.logger.debug("Test runs complete, closing runner")
+        return None
 
-    def run(self, tags: Optional[str] = None, format: Optional[str] = "pretty") -> str:
+    def __validate_tags(self, tags: List[str]) -> str:
+        self.logger.debug(f"Found {len(tags)} tags")
+        valid_tags = []
+        if not tags:
+            return None
+        for tag in tags:
+            fixed_tag = tag
+
+            if not tag.startswith("@"):
+                fixed_tag = f"@{tag}"
+            if fixed_tag in valid_tags:
+                raise TestopiaInputError(f"Duplicate tag {fixed_tag} found in tags")
+
+            valid_tags.append(fixed_tag)
+
+        all_tags = " ".join(valid_tags)
+        self.logger.info(f"Running {len(valid_tags)} tag(s): {all_tags}")
+        return all_tags
+
+    def run(
+        self, tags: Optional[List[str]] = None, format: Optional[str] = "pretty"
+    ) -> str:
         """
         Run the Behave tests.
 
@@ -107,16 +135,21 @@ class TestRunner:
         :return: Results of the Behave test run as a string.
         """
         self.logger.info(f"Output format: {format}")
+
+        # Parse and validate tags
         if tags:
-            all_tags = ", ".join(tags)
-            self.logger.info(f"Targeting {len(tags)} tags: {all_tags}")
+            validated_tags = self.__validate_tags(tags)
         else:
             self.logger.info("No tags selected, running full suite")
 
+        # Declare if exported or not
+        if self.export:
+            self.logger.debug(f"Results will be exported: {self.results_dir}")
+
         config = Configuration()
         config.paths = [self.feature_dir]
-        config.tags = tags if tags else []
         config.format = [format]
+        config.tags.check(validated_tags)
         config.stdout_capture = False
         config.stderr_capture = False
         config.log_capture = False
@@ -126,10 +159,11 @@ class TestRunner:
             runner.run()
         except Exception as e:
             self.logger.error(f"Error running Behave: {e}")
-            return f"Error running Behave: {e}"
+            raise TestopiaRuntimeError(f"Test execution failed: {e}") from e
 
-        self.logger.info("Behave tests completed")
-        return self._mystdout.getvalue() if self._mystdout else ""
+        self.logger.info("Gherkin tests completed")
+        sys.stdout = self._old_stdout
+        return self._my_stdout.getvalue()
 
     def get_results(self) -> str:
         """
@@ -138,4 +172,4 @@ class TestRunner:
         :return: Contents of the results as a string.
         """
         self.logger.info("Retrieving test results")
-        return self.results
+        return self.results if hasattr(self, "results") else ""

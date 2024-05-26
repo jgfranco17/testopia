@@ -1,3 +1,3 @@
 # Future Work
 
-- Deploy to Kubernetes cluster
+- Add tag filtering
