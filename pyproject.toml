@@ -1,0 +1,18 @@
+[tool.poetry]
+name = "testopia"
+version = "0.1.0"
+description = "Python module for running Gherkin-based feature tests for BDD"
+authors = ["Joaquin Franco <chino.franco@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+behave = "^1.2.6"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
