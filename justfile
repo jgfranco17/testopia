@@ -12,28 +12,15 @@ setup:
 	pip3 install -r requirements.txt
 	@echo "Project setup complete!"
 
-# Launch API in debug mode
-run-debug:
-	@echo "Running main app..."
-	@python3 app.py --port 8080 --debug
-
-# Launch API in production mode
-run-prod:
-	@echo "Running main app..."
-	@python3 app.py --port 8080
-
-# Build Docker image
-build-docker:
-	@echo "Building docker image..."
-	docker build -t fizzbuzz-api:latest -f ./Dockerfile .
-	@echo "Docker image built successfully!"
+run:
+	python test.py
 
 # Run pep8, black, mypy linters
 lint:
-	python -m pylint api/
-	python -m flake8 api/
-	python -m black -l 80 --check api/
-	python -m mypy --ignore-missing-imports api/
+	python -m pylint testopia/
+	python -m flake8 testopia/
+	python -m black -l 80 --check testopia/
+	python -m mypy --ignore-missing-imports testopia/
 
 # Clean unused files
 clean:
@@ -62,14 +49,5 @@ pytest:
 	@echo "Cleaned up test environment"
 
 coverage:
-    coverage run --source=api --omit="*/__*.py,*/test_*.py" -m pytest
+    coverage run --source=testopia --omit="*/__*.py,*/test_*.py" -m pytest
     coverage report
-
-# Run Behave feature tests
-behave:
-	@echo "Running feature test suite..."
-	behave ./tests/features/feature_tests/api_features
-
-smoke-tests:
-	@echo "Running smoke test suite..."
-	python3 smoketests.py
