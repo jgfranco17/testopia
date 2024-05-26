@@ -38,7 +38,7 @@ class TestReport:
             f"{Fore.WHITE}Feature:{Style.RESET_ALL} {Fore.WHITE}{self.feature}{Style.RESET_ALL}"
         )
         print(f"{Fore.WHITE}Scenario:{Style.RESET_ALL} {self.scenario}")
-        print(f"Ran {Fore.CYAN}{len(self.steps)}{Style.RESET_ALL} steps\n")
+        print(f"Ran {Fore.CYAN}{len(self.steps)}{Style.RESET_ALL} steps")
         status_report = {
             "Features": (
                 self.summary.features_passed,
@@ -61,14 +61,18 @@ class TestReport:
             passed, failed, skipped = data
             row = [
                 section,
-                f"{Fore.GREEN}{passed}{Style.RESET_ALL} passed",
-                f"{Fore.RED}{failed} failed{Style.RESET_ALL}",
-                f"{Fore.YELLOW}{skipped} skipped{Style.RESET_ALL}",
+                f"{Fore.GREEN}{passed}{Style.RESET_ALL}",
+                f"{Fore.RED}{failed}{Style.RESET_ALL}",
+                f"{Fore.YELLOW}{skipped}{Style.RESET_ALL}",
             ]
             table.append(row)
 
-        print(tabulate(table))
-        print()
+        headers = ["SECTION", "PASSED", "FAILED", "SKIPPED"]
+        print(
+            tabulate(
+                table, headers, showindex=False, tablefmt="outline", numalign="center"
+            )
+        )
         total_failed = [
             self.summary.features_failed,
             self.summary.scenarios_failed,
