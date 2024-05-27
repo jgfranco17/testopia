@@ -56,7 +56,7 @@ class TestReport:
                 self.summary.steps_skipped,
             ),
         }
-        table = []
+        summary_table = []
         for section, data in status_report.items():
             passed, failed, skipped = data
             row = [
@@ -65,12 +65,16 @@ class TestReport:
                 f"{Fore.RED}{failed}{Style.RESET_ALL}",
                 f"{Fore.YELLOW}{skipped}{Style.RESET_ALL}",
             ]
-            table.append(row)
+            summary_table.append(row)
 
         headers = ["SECTION", "PASSED", "FAILED", "SKIPPED"]
         print(
             tabulate(
-                table, headers, showindex=False, tablefmt="outline", numalign="center"
+                summary_table,
+                headers,
+                showindex=False,
+                tablefmt="outline",
+                numalign="center",
             )
         )
         total_failed = [

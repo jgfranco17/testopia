@@ -68,7 +68,6 @@ class TestRunner:
         :return: self
         """
         # Redirect stdout to capture Behave output
-        self.logger.debug("TestRunner context started")
         self._old_stdout = sys.stdout
         sys.stdout = self._my_stdout = StringIO()
         return self
@@ -94,7 +93,7 @@ class TestRunner:
         if self.export:
             with open(self.results_file, "w") as file:
                 file.write(self.results)
-            self.logger.info(f"Results written to {self.results_file}")
+            self.logger.debug(f"Results written to {self.results_file}")
 
         if exc_type:
             self.logger.error(
@@ -120,7 +119,7 @@ class TestRunner:
             valid_tags.append(fixed_tag)
 
         all_tags = " ".join(valid_tags)
-        self.logger.info(f"Running {len(valid_tags)} tag(s): {all_tags}")
+        self.logger.debug(f"Running {len(valid_tags)} tag(s): {all_tags}")
         return all_tags
 
     def run(
@@ -133,13 +132,13 @@ class TestRunner:
         :param format: Format of the test results (e.g., "pretty", "json").
         :return: Results of the Behave test run as a string.
         """
-        self.logger.info(f"Output format: {format}")
+        self.logger.debug(f"Output format: {format}")
 
         # Parse and validate tags
         if tags:
             validated_tags = self.__validate_tags(tags)
         else:
-            self.logger.info("No tags selected, running full suite")
+            self.logger.debug("No tags selected, running full suite")
 
         # Declare if exported or not
         if self.export:
@@ -160,7 +159,7 @@ class TestRunner:
             self.logger.error(f"Error running Behave: {e}")
             raise TestopiaRuntimeError(f"Test execution failed: {e}") from e
 
-        self.logger.info("Gherkin tests completed")
+        self.logger.debug("Gherkin tests completed")
         sys.stdout = self._old_stdout
         return self._my_stdout.getvalue()
 
@@ -170,6 +169,10 @@ class TestRunner:
 
         :return: Contents of the results as a string.
         """
-        self.logger.info("Retrieving test results")
-        report = ReportParser(self.results).parse()
-        report.display()
+        if self.results:
+            self.logger.debug("Retrieving test results")
+            report = ReportParser(self.results).parse()
+            report.display()
+
+        else:
+            print("No results to show.")
