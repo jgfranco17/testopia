@@ -27,7 +27,7 @@ class TestSummary:
 @dataclass
 class TestReport:
     feature: str = ""
-    scenario: str = ""
+    scenarios: List[str] = field(default_factory=list)
     steps: List[str] = field(default_factory=list)
     summary: TestSummary = field(default_factory=TestSummary)
 
@@ -37,8 +37,8 @@ class TestReport:
         print(
             f"{Fore.WHITE}Feature:{Style.RESET_ALL} {Fore.WHITE}{self.feature}{Style.RESET_ALL}"
         )
-        print(f"{Fore.WHITE}Scenario:{Style.RESET_ALL} {self.scenario}")
-        print(f"Ran {Fore.CYAN}{len(self.steps)}{Style.RESET_ALL} steps")
+        scenario_names = ", ".join(self.scenarios)
+        print(f"{Fore.WHITE}Scenarios:{Style.RESET_ALL} {scenario_names}")
         status_report = {
             "Features": (
                 self.summary.features_passed,
@@ -109,7 +109,7 @@ class ReportParser:
         if line.startswith("Feature:"):
             self.parsed_data.feature = line[len("Feature:") :].strip()
         elif line.startswith("Scenario:"):
-            self.parsed_data.scenario = line[len("Scenario:") :].strip()
+            self.parsed_data.scenarios.append(line[len("Scenario:") :].strip())
         elif (
             line.startswith("Given")
             or line.startswith("When")
